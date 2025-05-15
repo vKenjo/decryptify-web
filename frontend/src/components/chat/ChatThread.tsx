@@ -117,21 +117,21 @@ const ChatThread: React.FC<ChatThreadProps> = ({
               </svg>
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-violet-500 bg-clip-text text-transparent mb-3">
-              Welcome back, Kenjo!
+              Welcome to DeCryptify
             </h1>
             <p className="text-base text-gray-500 dark:text-gray-400 max-w-md mx-auto">
               Confidence in Crypto Starts with Trust
             </p>
           </div>
-        </div>      ) : (
-        <div className="space-y-6 max-w-4xl mx-auto pt-4 w-full">
+        </div>
+      ) : (
+        <div className="space-y-2 max-w-4xl mx-auto pt-4 w-full">
           {messages.map((message, index) => (
             <div 
               key={message.id} 
-              className={`message-container animate-fadeIn ${message.role === 'assistant' ? 'animate-bubble' : ''}`}
+              className={`message-container animate-fadeIn`}
               style={{ 
-                animationDelay: `${index * 150}ms`,
-                transformOrigin: message.role === 'user' ? 'right' : 'left'
+                animationDelay: `${index * 50}ms`,
               }}
             >
               <MessageWithContent message={message} />

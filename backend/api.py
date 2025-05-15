@@ -1,6 +1,3 @@
-"""
-Decryptify API - LangChain-based crypto trust assessment system
-"""
 import os
 import json
 from typing import Optional, List, Dict, Any
@@ -85,17 +82,19 @@ class CreateChatResponse(BaseModel):
     chat_id: str
     status: str = "success"
 
-# Import agent tools
-from backend.agents.coin_info import coin_info_tool
-from backend.agents.crypto_scam import crypto_scam_tool
-from backend.agents.certik import certik_tool
-from backend.agents.chainbroker import chainbroker_tool
-from backend.agents.founder_info import founder_info_tool
-from backend.agents.project_info import project_info_tool
-from backend.agents.trust_score import trust_score_tool
+# Import agent tools - use relative imports
+from agents.coin_info import coin_info_tool
+from agents.crypto_scam import crypto_scam_tool
+from agents.certik import certik_tool
+from agents.chainbroker import chainbroker_tool
+from agents.founder_info import founder_info_tool
+from agents.project_info import project_info_tool
+from agents.trust_score import trust_score_tool
+from agents.decryptify import decryptify_tool
 
 # Create the agent tools list
 tools = [
+    decryptify_tool,  # Main orchestrator as primary tool
     coin_info_tool,
     crypto_scam_tool,
     certik_tool,
@@ -111,14 +110,9 @@ agent_prompt = PromptTemplate.from_template("""You are Decryptify, an AI-powered
 Available tools:
 {tools}
 
-Use these tools to gather information when users ask about cryptocurrency projects. Always provide a comprehensive analysis including:
-1. Market data and token metrics
-2. Scam risk assessment
-3. Smart contract security audit results
-4. Exchange/broker reliability
-5. Founder and team credibility
-6. Project fundamentals
-7. Overall trust score (0-10)
+When a user asks about a cryptocurrency project, use the decryptify_orchestrator tool FIRST for a comprehensive analysis. Only use individual tools if the user specifically asks for targeted information.
+
+For general crypto questions, use your knowledge to provide helpful information.
 
 Current conversation:
 {chat_history}
@@ -200,6 +194,10 @@ async def root():
 async def list_agents():
     """List all available agents and their capabilities"""
     agents = [
+        {
+            "name": "Decryptify Main Agent",
+            "description": "Orchestrates all agents for comprehensive crypto trust assessment"
+        },
         {
             "name": "Coin Info Agent",
             "description": "Provides comprehensive cryptocurrency market data and analysis"
@@ -321,7 +319,35 @@ async def process_message(chat_id: str, message: str) -> str:
         # Get or create memory for this chat
         memory = get_or_create_memory(chat_id)
         
-        # Create the agent
+        # Check if message is asking for crypto analysis
+        crypto_keywords = ["bitcoin", "btc", "ethereum", "eth", "crypto", "coin", "token", "trust", "score", "analysis", "check", "evaluate", "assess"]
+        message_lower = message.lower()
+        
+        # If it's clearly asking about a specific crypto, extract the project name
+        is_crypto_query = any(keyword in message_lower for keyword in crypto_keywords)
+        
+        if is_crypto_query:
+            # Extract project name from queries like "What's the trust score for Bitcoin?"
+            # or "Analyze Ethereum" or just "Bitcoin"
+            project_name = message
+            for phrase in ["what's the trust score for", "what is the trust score of", "analyze", "check", "evaluate", "assess", "tell me about"]:
+                if phrase in message_lower:
+                    project_name = message_lower.split(phrase)[-1].strip()
+                    break
+            
+            # Clean up the project name
+            project_name = project_name.strip("?.,!").strip()
+            
+            # If it's a simple project name query, use the decryptify tool directly
+            if len(project_name.split()) <= 3:  # Simple queries like "Bitcoin" or "Ethereum Classic"
+                # Pass the LLM to the decryptify tool so it can calculate the trust score & find related projects
+                from backend.agents.decryptify import decryptify_analysis
+                response = decryptify_analysis(project_name, llm=llm)
+                memory.chat_memory.add_user_message(message)
+                memory.chat_memory.add_ai_message(response)
+                return response
+        
+        # For all other queries, use the agent
         agent = create_react_agent(
             llm=llm,
             tools=tools,
@@ -335,7 +361,7 @@ async def process_message(chat_id: str, message: str) -> str:
             memory=memory,
             verbose=True,
             handle_parsing_errors=True,
-            max_iterations=5
+            max_iterations=3
         )
         
         # Run the agent

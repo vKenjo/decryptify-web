@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import ChatThread from './ChatThread';
 import ChatInput from './ChatInput';
 import ChatSuggestions from './ChatSuggestions';
@@ -18,7 +17,11 @@ interface Suggestion {
   text: string;
 }
 
-const Chat: React.FC = () => {  
+interface ChatProps {
+  streaming?: boolean; // Optional prop to enable streaming
+}
+
+const Chat: React.FC<ChatProps> = ({ streaming = false }) => {  
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -30,18 +33,18 @@ const Chat: React.FC = () => {
   const suggestions: Suggestion[] = [
     { 
       id: '1', 
-      title: "What's the trust score for [Crypto Project]?",
+      title: "What's the trust score for Bitcoin?",
       text: "Find out the trust rating for any crypto project"
     },
     { 
       id: '2', 
-      title: "How is the trust score calculated?",
-      text: "Learn about the methodology behind our trust ratings"
+      title: "Analyze Ethereum",
+      text: "Get comprehensive analysis of Ethereum"
     },
     { 
       id: '3', 
-      title: "Which new crypto projects have strong trust scores?",
-      text: "Discover promising new projects with high trust ratings"
+      title: "Is Dogecoin a good investment?",
+      text: "Evaluate the trustworthiness of Dogecoin"
     }
   ];
   
@@ -59,7 +62,7 @@ const Chat: React.FC = () => {
     setIsWelcomeVisible(false);
     
     const newMessage: Message = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       content,
       role: 'user',
     };
@@ -74,14 +77,28 @@ const Chat: React.FC = () => {
         const createResponse = await apiService.createChat(content);
         setChatId(createResponse.chat_id);
         
-        // The response from createChat should already include the AI response
-        // so we don't need to send another message
+        // After creating the chat, we need to get the first response
+        // The backend will have already processed the initial message
+        const historyResponse = await apiService.getChatHistory(createResponse.chat_id);
+        
+        // Add the assistant's response if it exists
+        const assistantMessages = historyResponse.messages.filter(msg => msg.role === 'assistant');
+        if (assistantMessages.length > 0) {
+          const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
+          const assistantMessage: Message = {
+            id: crypto.randomUUID(),
+            content: lastAssistantMessage.content,
+            role: 'assistant',
+          };
+          
+          setMessages(prev => [...prev, assistantMessage]);
+        }
       } else {
         // Send message to existing chat
         const response = await apiService.sendMessage(chatId, content);
         
         const assistantMessage: Message = {
-          id: uuidv4(),
+          id: crypto.randomUUID(),
           content: response.message.content,
           role: 'assistant',
         };
@@ -93,8 +110,8 @@ const Chat: React.FC = () => {
       
       // Add an error message to the chat
       const errorMessage: Message = {
-        id: uuidv4(),
-        content: "I'm sorry, I encountered an error processing your request. Please try again.",
+        id: crypto.randomUUID(),
+        content: "I'm sorry, I encountered an error processing your request. Please make sure the backend server is running.",
         role: 'assistant',
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -109,19 +126,26 @@ const Chat: React.FC = () => {
   
   // Load existing chat if there's a chatId in URL or storage
   useEffect(() => {
-    // Check if there's a chat ID in local storage
+    // Check if there's a chat ID in local storage or URL params
     const storedChatId = localStorage.getItem('currentChatId');
-    if (storedChatId) {
-      setChatId(storedChatId);
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlChatId = urlParams.get('chatId');
+    
+    const chatIdToLoad = urlChatId || storedChatId;
+    
+    if (chatIdToLoad) {
+      setChatId(chatIdToLoad);
       
-      // Load chat history
-      apiService.getChatHistory(storedChatId)
+      // Load chat history from backend
+      apiService.getChatHistory(chatIdToLoad)
         .then(response => {
-          const formattedMessages: Message[] = response.messages.map(msg => ({
-            id: uuidv4(),
-            content: msg.content,
-            role: msg.role as MessageRole,
-          }));
+          const formattedMessages: Message[] = response.messages
+            .filter(msg => msg.role !== 'system') // Don't show system messages
+            .map(msg => ({
+              id: crypto.randomUUID(),
+              content: msg.content,
+              role: msg.role as MessageRole,
+            }));
           setMessages(formattedMessages);
           if (formattedMessages.length > 0) {
             setIsWelcomeVisible(false);
@@ -129,14 +153,20 @@ const Chat: React.FC = () => {
         })
         .catch(err => {
           console.error('Failed to load chat history:', err);
+          // If chat not found, clear the stored ID
+          localStorage.removeItem('currentChatId');
+          setChatId(null);
         });
     }
   }, []);
   
-  // Save current chat ID to local storage
+  // Save current chat ID to local storage and update URL
   useEffect(() => {
     if (chatId) {
       localStorage.setItem('currentChatId', chatId);
+      // Update URL without causing a page reload
+      const newUrl = `${window.location.pathname}?chatId=${chatId}`;
+      window.history.replaceState({ ...window.history.state }, '', newUrl);
     }
   }, [chatId]);
   

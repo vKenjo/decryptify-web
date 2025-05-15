@@ -1,11 +1,11 @@
-// API service for communicating with the backend
+// API service for communicating with the Python backend
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
 export interface Message {
   id: string;
   content: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   timestamp?: string;
 }
 
@@ -108,17 +108,6 @@ export class APIService {
   }
 
   async getModelInfo(): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/api/model`);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
-  }
-}
-
-export const apiService = new APIService();
     const response = await fetch(`${this.baseUrl}/api/model`);
 
     if (!response.ok) {

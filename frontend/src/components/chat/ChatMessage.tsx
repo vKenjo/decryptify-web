@@ -1,39 +1,51 @@
 import React from 'react';
+import AgentResponseFormatter from './AgentResponseFormatter';
 
 export type MessageRole = 'user' | 'assistant';
 
 interface ChatMessageProps {
-  content: string;
   role: MessageRole;
+  content: string;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ content, role }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => {
+  const isUser = role === 'user';
+
   return (
-    <div className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-      {role === 'assistant' ? (        <div className="chatbox max-w-[80%] bg-white dark:bg-gray-800/90 rounded-2xl px-6 py-4 shadow-md border border-gray-100 dark:border-gray-700/50">
-          <div className="flex items-center mb-2">
-            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/70 flex items-center justify-center mr-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#3B82F6" />
-              </svg>
-            </div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Cryptify Assistant</h3>
-          </div>
-          <div className="pl-10">
-            <p className="text-gray-700 dark:text-gray-200 leading-relaxed">{content}</p>
-          </div>
-        </div>      ) : (        <div className="chatbox max-w-[75%] bg-blue-50 dark:bg-blue-900/30 rounded-2xl px-5 py-4 shadow-md border border-blue-100 dark:border-blue-800/50">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">You</h3>
-            <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#3B82F6" />
-              </svg>
-            </div>
-          </div>
-          <p className="text-gray-800 dark:text-blue-100 leading-relaxed">{content}</p>
+    <div className={`flex gap-3 p-6 w-full ${
+      isUser 
+        ? 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800' 
+        : 'bg-white dark:bg-gray-800'
+    } rounded-lg shadow-sm mb-2`}>
+      {/* User/Assistant indicator */}
+      <div className="flex-shrink-0">
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold shadow-md ${
+          isUser 
+            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
+            : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
+        }`}>
+          {isUser ? 'U' : 'D'}
         </div>
-      )}
+      </div>
+
+      {/* Message content */}
+      <div className="flex-1 overflow-hidden">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+            {isUser ? 'You' : 'DeCryptify Assistant'}
+          </span>
+          <span className="text-xs text-gray-500 dark:text-gray-500">
+            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+        <div className={`${isUser ? 'text-gray-900 dark:text-gray-100' : 'text-gray-800 dark:text-gray-200'}`}>
+          {isUser ? (
+            <p className="text-base leading-relaxed">{content}</p>
+          ) : (
+            <AgentResponseFormatter content={content} />
+          )}
+        </div>
+      </div>
     </div>
   );
 };

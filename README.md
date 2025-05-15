@@ -1,72 +1,295 @@
-# Decryptify - AI-Powered Crypto Trust Assessment
+# DeCryptify Web - Complete Deployment Guide
 
-Decryptify is an advanced AI-powered system that helps investors and traders assess the trustworthiness of cryptocurrency projects. Using multiple specialized AI agents, it provides comprehensive analysis and trust scores to help you make informed investment decisions.
+A comprehensive crypto trust assessment system with Next.js frontend and Python backend using LangChain and Google's AI Studio agents.
 
-## Key Features
+## Architecture
 
-🔍 **Multi-Agent Analysis System**
-- **Coin Info Agent**: Real-time market data and comprehensive token metrics
-- **Crypto Scam Detector**: Advanced pattern recognition for identifying potential scams
-- **CertiK Agent**: Smart contract security audit analysis
-- **ChainBroker Agent**: Exchange and broker reliability assessment
-- **Founder Research Agent**: Team background verification and credibility checks
-- **Project Info Agent**: Comprehensive project data aggregation
-- **Trust Score Agent**: Synthesized trust rating (0-10) based on all factors
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend**: Python FastAPI with LangChain agents
+- **AI**: Google AI Studio (Gemini Pro) via LangChain
+- **Database**: Firebase Firestore
+- **Deployment**: Vercel (supports both frontend and Python backend)
 
-💡 **Intelligent Insights**
-- Real-time market data from CoinGecko
-- Scam pattern detection using advanced algorithms
-- Security audit verification
-- Team credibility assessment
-- Exchange reliability ratings
-- Overall trust score calculation
+## Prerequisites
 
-🛡️ **Security & Transparency**
-- Open-source codebase
-- Transparent scoring methodology
-- Multiple data source verification
-- Regular updates and improvements
+- Node.js 18+ installed
+- Python 3.9+ installed
+- Google Cloud account with AI Studio API access
+- Firebase project with Firestore enabled
+- Vercel account
 
-## How It Works
+## Project Structure
 
-1. **Ask About Any Crypto Project**: Simply type the name of any cryptocurrency or project
-2. **Multi-Agent Analysis**: Our specialized agents gather data from multiple sources
-3. **Comprehensive Report**: Receive detailed analysis including:
-   - Market metrics and price data
-   - Scam risk assessment
-   - Security audit results
-   - Team credibility scores
-   - Project fundamentals
-   - Overall trust rating
+```
+decryptify-web/
+├── frontend/           # Next.js frontend application
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── .env.local
+├── backend/           # Python FastAPI backend with agents
+│   ├── agents/       # Crypto analysis agents
+│   ├── api.py       # Main API server
+│   ├── requirements.txt
+│   └── .env
+└── vercel.json      # Vercel deployment configuration
+```
 
-## Use Cases
+## Local Development Setup
 
-- **Investment Due Diligence**: Research before investing in new projects
-- **Risk Assessment**: Identify potential scams and high-risk projects
-- **Portfolio Management**: Monitor trust scores of existing holdings
-- **Market Research**: Compare different projects and tokens
-- **Educational Tool**: Learn about crypto project evaluation
+### 1. Clone the Repository
 
-## Technology Stack
+```bash
+git clone <your-repo-url>
+cd decryptify-web
+```
 
-- **Frontend**: Next.js with TypeScript for a modern, responsive UI
-- **Backend**: FastAPI with LangChain for intelligent agent orchestration
-- **AI Models**: Google Gemini for advanced natural language processing
-- **Database**: Firebase Firestore for chat history and data persistence
-- **APIs**: CoinGecko, CertiK, and other crypto data providers
+### 2. Backend Setup
 
-## Why Decryptify?
+```bash
+cd backend
 
-✅ **Comprehensive Analysis**: Don't rely on single sources - get multi-faceted insights
-✅ **Save Time**: Automated research that would take hours manually
-✅ **Reduce Risk**: Identify red flags before investing
-✅ **Stay Informed**: Real-time data and continuous updates
-✅ **User-Friendly**: Simple chat interface - no technical knowledge required
+# Create virtual environment
+python -m venv venv
 
-## Getting Started
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
 
-Visit our web application and start analyzing any cryptocurrency project. Simply enter the project name and receive a comprehensive trust assessment within seconds.
+# Install dependencies
+pip install -r requirements.txt
+```
 
----
+### 3. Backend Environment Configuration
 
-**Disclaimer**: Decryptify provides information and analysis tools. All investment decisions should be made based on your own research and risk tolerance. We do not provide financial advice.
+Create a `.env` file in the backend directory:
+
+```env
+# Google AI API Configuration
+GOOGLE_API_KEY=your_google_ai_studio_api_key
+
+# Firebase Admin SDK (for Firestore)
+GOOGLE_APPLICATION_CREDENTIALS=path/to/firebase-credentials.json
+
+# CORS Configuration
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8000
+
+# Optional: Model Configuration
+MODEL_NAME=gemini-pro
+```
+
+### 4. Firebase Setup
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project or select existing
+3. Enable Firestore Database
+4. Go to Project Settings > Service Accounts
+5. Click "Generate new private key"
+6. Save the JSON file as `firebase-credentials.json` in the backend directory
+7. Update the path in your `.env` file
+
+### 5. Frontend Setup
+
+```bash
+cd ../frontend
+
+# Install dependencies
+npm install
+```
+
+### 6. Frontend Environment Configuration
+
+Create a `.env.local` file in the frontend directory:
+
+```env
+# Backend API URL
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+
+# Site URL
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+### 7. Run Development Servers
+
+In separate terminals:
+
+**Backend:**
+```bash
+cd backend
+# Make sure virtual environment is activated
+uvicorn api:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+
+The application will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+
+## Available Agents
+
+The backend includes specialized crypto analysis agents:
+
+1. **DeCryptify Orchestrator**: Main agent that coordinates all other agents
+2. **Coin Info Agent**: Provides market data and cryptocurrency information
+3. **CertiK Agent**: Analyzes smart contract security audits
+4. **ChainBroker Agent**: Evaluates broker and exchange data
+5. **Crypto Scam Agent**: Detects potential scam indicators
+6. **Founder Info Agent**: Investigates project founder backgrounds
+7. **Project Info Agent**: Gathers comprehensive project data
+8. **Trust Score Agent**: Calculates final trust score (0-10)
+
+## Production Deployment on Vercel
+
+### Option 1: Deploy via Vercel CLI
+
+1. Install Vercel CLI:
+```bash
+npm install -g vercel
+```
+
+2. Deploy from project root:
+```bash
+vercel
+```
+
+3. Follow prompts and set environment variables when asked.
+
+### Option 2: Deploy via GitHub
+
+1. Push your code to GitHub
+
+2. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+
+3. Import your repository
+
+4. Configure environment variables:
+   ```
+   # Backend (Function) Environment Variables
+   GOOGLE_API_KEY=your_google_ai_studio_api_key
+   GOOGLE_APPLICATION_CREDENTIALS=firebase-credentials.json
+   ALLOWED_ORIGINS=https://your-domain.vercel.app
+   
+   # Frontend Environment Variables
+   NEXT_PUBLIC_BACKEND_URL=https://your-domain.vercel.app
+   NEXT_PUBLIC_SITE_URL=https://your-domain.vercel.app
+   ```
+
+5. Deploy
+
+### Option 3: Manual Configuration
+
+1. Create a vercel.json in the root directory:
+```json
+{
+  "functions": {
+    "backend/api.py": {
+      "runtime": "python3.9",
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/backend/api.py"
+    }
+  ]
+}
+```
+
+2. Deploy via Vercel Dashboard with appropriate settings
+
+## Environment Variables for Production
+
+### Backend (Vercel Functions):
+- `GOOGLE_API_KEY`: Your Google AI Studio API key
+- `GOOGLE_APPLICATION_CREDENTIALS`: Firebase credentials (upload file to Vercel)
+- `ALLOWED_ORIGINS`: Your production domain
+
+### Frontend:
+- `NEXT_PUBLIC_BACKEND_URL`: Your production URL
+- `NEXT_PUBLIC_SITE_URL`: Your production URL
+
+## API Endpoints
+
+- `GET /`: API root and welcome message
+- `GET /api/agents`: List all available agents
+- `GET /api/model`: Get current model information
+- `POST /api/chats/create`: Create new chat session
+- `POST /api/chats/message`: Send message to existing chat
+- `GET /api/chats/{chat_id}/history`: Get chat history
+
+## Features
+
+- ✅ Comprehensive crypto trust assessment
+- ✅ Multiple specialized AI agents
+- ✅ Persistent chat history in Firestore
+- ✅ Real-time response processing
+- ✅ Dark mode support
+- ✅ Responsive design
+- ✅ Production-ready deployment
+
+## Troubleshooting
+
+### Common Issues
+
+1. **CORS Errors**: Ensure `ALLOWED_ORIGINS` includes your frontend URL
+2. **Firebase Connection**: Verify credentials file path and permissions
+3. **API Key Issues**: Check Google AI Studio API key is valid
+4. **Agent Errors**: Review agent logs in backend console
+
+### Development Tips
+
+1. Use the API documentation at `/docs` for testing endpoints
+2. Check browser console for frontend errors
+3. Monitor backend logs for agent processing details
+4. Use Firestore console to verify data persistence
+
+## Performance Optimization
+
+- Agents have a 3-iteration limit to prevent loops
+- Chat sessions are stored in memory for faster access
+- Firestore queries are optimized with proper indexing
+- Frontend implements proper error handling and loading states
+
+## Security Notes
+
+- Google API keys are server-side only
+- Firebase credentials are never exposed to client
+- CORS is properly configured for production
+- All agent responses are sanitized
+
+## Future Enhancements
+
+- Add user authentication
+- Implement rate limiting
+- Add more specialized agents
+- Create admin dashboard
+- Add real-time streaming responses
+- Implement agent result caching
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## Support
+
+- Google AI Studio: [Documentation](https://ai.google.dev/docs)
+- LangChain: [Documentation](https://docs.langchain.com/)
+- Firebase: [Documentation](https://firebase.google.com/docs)
+- Vercel: [Documentation](https://vercel.com/docs)
+
+## License
+
+[Your License Here]
