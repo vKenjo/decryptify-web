@@ -59,7 +59,7 @@ except Exception as e:
 
 # Replace the existing LLM initialization
 llm = ChatOpenAI(
-    model="gpt-4o1-",  # You can use "gpt-3.5-turbo" for a more affordable option
+    model="gpt-4o-mini",  # You can use "gpt-3.5-turbo" for a more affordable option
     openai_api_key=os.getenv("OPENAI_API_KEY"),
     temperature=0.7,
 )
