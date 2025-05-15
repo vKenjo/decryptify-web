@@ -154,8 +154,7 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
             # Basic heuristics to determine trust
             trust_level = "MEDIUM"  # Default
             trust_value = 5  # Default
-            
-            # Check for red flags in scam analysis
+                  # Check for red flags in scam analysis
             if "scam" in sections["scam_analysis"].lower() or "suspicious" in sections["scam_analysis"].lower():
                 trust_level = "LOW"
                 trust_value = 3
@@ -164,6 +163,27 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
             if "audit" in sections["security_audit"].lower() and "passed" in sections["security_audit"].lower():
                 trust_level = "HIGH"
                 trust_value = 8
+                
+            # Special case for well-known cryptocurrencies
+            well_known = ["bitcoin", "btc", "ethereum", "eth", "cardano", "ada", "solana", "sol", "binance coin", "bnb"]
+            if project_name.lower() in well_known or any(wk in project_name.lower() for wk in well_known):
+                logger.info(f"Recognized well-known cryptocurrency: {project_name}")
+                if project_name.lower() in ["bitcoin", "btc"]:
+                    trust_level = "HIGH"
+                    trust_value = 9
+                    reasoning = "Bitcoin is the first cryptocurrency with the longest track record and highest market capitalization."
+                elif project_name.lower() in ["ethereum", "eth"]:
+                    trust_level = "HIGH"
+                    trust_value = 8
+                    reasoning = "Ethereum is one of the most established blockchain platforms with a large ecosystem and strong developer community."
+                else:
+                    trust_level = "HIGH"
+                    trust_value = 7
+                    reasoning = "Well-established cryptocurrency with significant market presence and community support."
+                
+                trust_score = f"Overall Trust Score: {trust_value}/10\nTrust Level: {trust_level}\nReason: {reasoning}"
+                logger.info(f"Generated trust score for well-known crypto: {trust_score}")
+                return trust_score
                 
             # Generate explanation based on available data
             reasons = []
@@ -192,19 +212,27 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
             if mcap_match:
                 market_cap = f"${mcap_match.group(1)}"
         except Exception:
-            pass
-
-        # Extract founder info - just the basics
+            pass        # Extract founder info - just the basics
         founder_info = "No founder information available"
         try:
-            # Try to extract just the key founder information
-            founder_section = sections['founder_analysis'].split('\n')
-            for i, line in enumerate(founder_section):
-                if "Founder" in line or "Team" in line or "CEO" in line:
-                    founder_info = '\n'.join(founder_section[i:i+3])
-                    break
-        except Exception:
-            pass        # Extract trust level with more robust parsing
+            # Special case for Bitcoin
+            if project_name.lower() == "bitcoin" or project_name.lower() == "btc":
+                founder_info = "Created by Satoshi Nakamoto (pseudonym). Identity remains unknown. Bitcoin whitepaper was published in 2008."
+                logger.info("Using predefined founder info for Bitcoin")
+            # Special case for Ethereum
+            elif project_name.lower() == "ethereum" or project_name.lower() == "eth":
+                founder_info = "Founded by Vitalik Buterin along with Gavin Wood, Charles Hoskinson, and others in 2015."
+                logger.info("Using predefined founder info for Ethereum")
+            else:
+                # Try to extract just the key founder information
+                founder_section = sections['founder_analysis'].split('\n')
+                for i, line in enumerate(founder_section):
+                    if "Founder" in line or "Team" in line or "CEO" in line:
+                        founder_info = '\n'.join(founder_section[i:i+3])
+                        break
+        except Exception as e:
+            logger.error(f"Error extracting founder info: {str(e)}")
+            pass# Extract trust level with more robust parsing
         trust_level = "MEDIUM"
         try:
             if "Trust Level:" in trust_score:
@@ -224,32 +252,41 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
             else:
                 logger.warning("No 'Reason:' found in trust score response")
         except Exception as e:
-            logger.error(f"Error extracting reasoning: {str(e)}")
-              # Format a simplified concise response with separate string parts to avoid backslash issues
+            logger.error(f"Error extracting reasoning: {str(e)}")              # Format a simplified concise response with separate string parts to avoid backslash issues
         project_remark = "No project data available"
         scam_remark = "No scam analysis available"
         
-        try:
-            project_lines = sections['project_analysis'].split("\n")
-            if project_lines and len(project_lines) > 0:
-                for line in project_lines:
-                    if line.strip():  # Find first non-empty line
-                        project_remark = line.strip()
-                        break
-            logger.info(f"Project remark: {project_remark}")
-        except Exception as e:
-            logger.error(f"Error extracting project remark: {str(e)}")
-            
-        try:
-            scam_lines = sections['scam_analysis'].split("\n")
-            if scam_lines and len(scam_lines) > 0:
-                for line in scam_lines:
-                    if line.strip():  # Find first non-empty line
-                        scam_remark = line.strip()
-                        break
-            logger.info(f"Scam remark: {scam_remark}")
-        except Exception as e:
-            logger.error(f"Error extracting scam remark: {str(e)}")        # Build response with more robust trust score extraction
+        # Special case for major cryptocurrencies
+        if project_name.lower() == "bitcoin" or project_name.lower() == "btc":
+            project_remark = "First decentralized cryptocurrency, created in 2009. Uses proof-of-work consensus."
+            scam_remark = "Bitcoin itself is legitimate, but be aware of Bitcoin-related scams and fake wallets."
+            logger.info("Using predefined project and scam remarks for Bitcoin")
+        elif project_name.lower() == "ethereum" or project_name.lower() == "eth":
+            project_remark = "Smart contract platform that enables DApps and DeFi applications."
+            scam_remark = "Ethereum is legitimate, but watch for phishing sites and fake airdrops."
+            logger.info("Using predefined project and scam remarks for Ethereum")
+        else:
+            try:
+                project_lines = sections['project_analysis'].split("\n")
+                if project_lines and len(project_lines) > 0:
+                    for line in project_lines:
+                        if line.strip():  # Find first non-empty line
+                            project_remark = line.strip()
+                            break
+                logger.info(f"Project remark: {project_remark}")
+            except Exception as e:
+                logger.error(f"Error extracting project remark: {str(e)}")
+                
+            try:
+                scam_lines = sections['scam_analysis'].split("\n")
+                if scam_lines and len(scam_lines) > 0:
+                    for line in scam_lines:
+                        if line.strip():  # Find first non-empty line
+                            scam_remark = line.strip()
+                            break
+                logger.info(f"Scam remark: {scam_remark}")
+            except Exception as e:
+                logger.error(f"Error extracting scam remark: {str(e)}")# Build response with more robust trust score extraction
         trust_score_value = "N/A"  # Default if we can't extract a proper score
         try:
             if 'Overall Trust Score:' in trust_score:

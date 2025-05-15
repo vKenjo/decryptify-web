@@ -70,11 +70,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeChat, onChatSelect }) => {
 				
 				setChats(fetchedChats);
 			} catch (error) {
-				console.error('Error fetching chats:', error);
-				// Provide fallback data in case of error
+				console.error('Error fetching chats:', error);				// Provide fallback data in case of error
 				setChats([
 					{
-						id: 'welcome',
+						id: 'new',  // Changed from 'welcome' to 'new' to avoid 404
 						title: 'Welcome to Decryptify',
 						preview: 'Ask me about any cryptocurrency project...',
 						active: true
@@ -90,8 +89,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activeChat, onChatSelect }) => {
 
 	const handleToggle = () => setCollapsed((prev) => !prev);
 	const handleDoubleClick = () => setCollapsed((prev) => !prev);
-	
-	const handleChatClick = (chatId: string) => {
+		const handleChatClick = (chatId: string) => {
+		// If it's the "new" welcome chat, just clear the chat
+		if (chatId === 'new') {
+			// Dispatch event to create new chat
+			const event = new CustomEvent('newchat');
+			window.dispatchEvent(event);
+			return;
+		}
+		
 		if (onChatSelect) {
 			onChatSelect(chatId);
 		}
