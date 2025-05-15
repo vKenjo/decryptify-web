@@ -127,11 +127,21 @@ const Sidebar: React.FC<SidebarProps> = ({ activeChat, onChatSelect }) => {
 					{!collapsed && (
 						<h2 className='font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 transition-opacity duration-500'>DeCryptify</h2>
 					)}
-				</div>
-
-				{/* Main Action Buttons */}
+				</div>				{/* Main Action Buttons */}
 				<div className={`mb-5 flex ${collapsed ? 'flex-col gap-4 items-center w-full' : 'gap-2 w-full'} transition-all duration-500`} style={collapsed ? { marginBottom: '2.5rem' } : {}}>
-					<button className={`bg-gradient-to-r from-blue-200 to-purple-200 text-gray-700 ${collapsed ? 'rounded-full w-12 h-12 flex items-center justify-center p-0 transition-all duration-500' : 'rounded-full py-2 flex-1 flex items-center gap-2 justify-center hover:opacity-90 transition-all duration-500'}`}>
+					<button 
+						className={`bg-gradient-to-r from-blue-200 to-purple-200 text-gray-700 ${collapsed ? 'rounded-full w-12 h-12 flex items-center justify-center p-0 transition-all duration-500' : 'rounded-full py-2 flex-1 flex items-center gap-2 justify-center hover:opacity-90 transition-all duration-500'}`}
+						onClick={() => {
+							// Clear active chat and redirect to base URL
+							localStorage.removeItem('currentChatId');
+							const baseUrl = window.location.pathname;
+							window.history.pushState({}, '', baseUrl);
+							
+							// Dispatch event to notify Chat component
+							const event = new CustomEvent('newchat');
+							window.dispatchEvent(event);
+						}}
+					>
 						<PlusIcon className='w-6 h-6' />
 						{!collapsed && <span className='font-medium text-sm transition-opacity duration-500'>New chat</span>}
 					</button>

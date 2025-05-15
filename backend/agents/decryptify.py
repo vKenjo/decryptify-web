@@ -1,8 +1,14 @@
 from typing import Dict, List, Optional
+import sys
+import logging
 from langchain.tools import Tool
 from langchain.agents import create_react_agent
 from langchain.llms.base import LLM
 from langchain.prompts import PromptTemplate
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('decryptify')
 
 # Import all other agents
 from .coin_info import coin_info_tool
@@ -18,8 +24,10 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
     Main Decryptify orchestrator that coordinates all agents to provide comprehensive trust assessment
     """
     try:
+        logger.info(f"Starting Decryptify analysis for query: {query}")
         # Parse the query to extract project/coin name
         project_name = query.strip()
+        logger.info(f"Analyzing project: {project_name}")
         
         # Initialize response sections
         sections = {
@@ -31,54 +39,72 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
             "project_analysis": "",
             "related_projects": []
         }
-        
-        # 1. Get market data
+          # 1. Get market data
         try:
+            logger.info(f"Fetching market data for {project_name}")
             sections["market_data"] = coin_info_tool.func(project_name)
+            logger.info("Market data fetched successfully")
         except Exception as e:
+            logger.error(f"Error fetching market data: {str(e)}")
             sections["market_data"] = f"Market data unavailable: {str(e)}"
         
         # 2. Perform scam analysis
         try:
+            logger.info(f"Performing scam analysis for {project_name}")
             sections["scam_analysis"] = crypto_scam_tool.func(project_name)
+            logger.info("Scam analysis completed")
         except Exception as e:
+            logger.error(f"Error in scam analysis: {str(e)}")
             sections["scam_analysis"] = f"Scam analysis unavailable: {str(e)}"
-        
-        # 3. Check security audits
+          # 3. Check security audits
         try:
+            logger.info(f"Checking security audits for {project_name}")
             sections["security_audit"] = certik_tool.func(project_name)
+            logger.info("Security audit check completed")
         except Exception as e:
+            logger.error(f"Error checking security audits: {str(e)}")
             sections["security_audit"] = f"Security audit unavailable: {str(e)}"
         
         # 4. Analyze exchanges (if applicable)
         try:
             if "exchange" in project_name.lower() or "binance" in project_name.lower() or "coinbase" in project_name.lower():
+                logger.info(f"Performing exchange analysis for {project_name}")
                 sections["exchange_analysis"] = chainbroker_tool.func(project_name)
+                logger.info("Exchange analysis completed")
             else:
+                logger.info(f"{project_name} is not an exchange - skipping exchange analysis")
                 sections["exchange_analysis"] = "Not an exchange - skipping exchange analysis"
         except Exception as e:
+            logger.error(f"Error in exchange analysis: {str(e)}")
             sections["exchange_analysis"] = f"Exchange analysis unavailable: {str(e)}"
-        
-        # 5. Research founders
+          # 5. Research founders
         try:
+            logger.info(f"Researching founders for {project_name}")
             sections["founder_analysis"] = founder_info_tool.func(project_name)
+            logger.info("Founder research completed")
         except Exception as e:
+            logger.error(f"Error researching founders: {str(e)}")
             sections["founder_analysis"] = f"Founder analysis unavailable: {str(e)}"
         
         # 6. Gather project information
         try:
+            logger.info(f"Gathering project information for {project_name}")
             sections["project_analysis"] = project_info_tool.func(project_name)
+            logger.info("Project information gathering completed")
         except Exception as e:
+            logger.error(f"Error gathering project information: {str(e)}")
             sections["project_analysis"] = f"Project analysis unavailable: {str(e)}"
         
         # 7. Find related projects/founders using the dedicated function (passing the LLM)
         try:
+            logger.info(f"Finding related projects for {project_name}")
             sections["related_projects"] = find_related_projects(project_name, llm)
+            logger.info(f"Found {len(sections['related_projects'])} related projects")
         except Exception as e:
-            print(f"Error finding related projects: {str(e)}")
-            sections["related_projects"] = []
-          # 8. Let the LLM calculate the trust score
-        trust_score = "Not available"
+            logger.error(f"Error finding related projects: {str(e)}")
+            sections["related_projects"] = []# 8. Let the LLM calculate the trust score        # Initialize with None to ensure we properly detect and handle missing LLM scenario
+        trust_score = None
+        logger.info(f"Beginning trust score calculation for {project_name}")
         if llm:
             try:
                 # Combine all analysis for trust score calculation with LLM
@@ -89,6 +115,9 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
                 Founder Analysis: {sections['founder_analysis']}
                 Project Analysis: {sections['project_analysis']}
                 """
+                
+                # Log the analysis data being used
+                logger.info(f"Analysis data assembled for {project_name}")
                 
                 # Prompt the LLM to calculate a trust score
                 trust_prompt = f"""
@@ -103,15 +132,52 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
                 Overall Trust Score: [SCORE]/10
                 Trust Level: [HIGH/MEDIUM/LOW]
                 Reason: [1-2 sentence explanation]                """
-                
+                  logger.info(f"Invoking LLM for trust score calculation")
                 response = llm.invoke(trust_prompt)
                 # Extract content based on the return type (could be message object or string)
                 if hasattr(response, 'content'):
                     trust_score = response.content
                 else:
                     trust_score = str(response)
+                    
+                logger.info(f"Received trust score: {trust_score[:50]}...")
             except Exception as e:
-                trust_score = f"Trust score calculation failed: {str(e)}"
+                logger.error(f"Trust score calculation failed: {str(e)}")
+                # Create a fallback trust score based on available data
+                trust_level = "MEDIUM"
+                reasoning = f"Unable to complete full analysis due to: {str(e)}"
+                trust_score = f"Overall Trust Score: 5/10\nTrust Level: {trust_level}\nReason: {reasoning}"
+        else:
+            # If no LLM is provided, we need to generate a basic trust score from available data
+            logger.warning("No LLM provided for trust score calculation - generating basic score")
+            
+            # Basic heuristics to determine trust
+            trust_level = "MEDIUM"  # Default
+            trust_value = 5  # Default
+            
+            # Check for red flags in scam analysis
+            if "scam" in sections["scam_analysis"].lower() or "suspicious" in sections["scam_analysis"].lower():
+                trust_level = "LOW"
+                trust_value = 3
+                
+            # Higher trust for audited projects
+            if "audit" in sections["security_audit"].lower() and "passed" in sections["security_audit"].lower():
+                trust_level = "HIGH"
+                trust_value = 8
+                
+            # Generate explanation based on available data
+            reasons = []
+            if "Market data unavailable" not in sections["market_data"]:
+                reasons.append("market data available")
+            if "No founder information" not in sections["founder_analysis"]:
+                reasons.append("founder information verified")
+            if reasons:
+                reasoning = f"Basic assessment based on {', '.join(reasons)}"
+            else:
+                reasoning = "Limited data available for comprehensive assessment"
+                
+            trust_score = f"Overall Trust Score: {trust_value}/10\nTrust Level: {trust_level}\nReason: {reasoning}"
+            logger.info("Generated basic trust score in absence of LLM")
         
         # Extract current price from market data
         current_price = "Not available"
@@ -138,41 +204,95 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
                     founder_info = '\n'.join(founder_section[i:i+3])
                     break
         except Exception:
-            pass
-          # Extract trust level
-        trust_level = "UNKNOWN"
-        if "Trust Level:" in trust_score:
-            trust_level = trust_score.split("Trust Level:")[1].split("\n")[0].strip()
-          # Extract reasoning
-        reasoning = "Analysis based on market data, security audits, and project history."
-        if "Reason:" in trust_score:
-            reasoning = trust_score.split("Reason:")[1].strip()
+            pass        # Extract trust level with more robust parsing
+        trust_level = "MEDIUM"
+        try:
+            if "Trust Level:" in trust_score:
+                trust_level = trust_score.split("Trust Level:")[1].split("\n")[0].strip()
+                logger.info(f"Extracted trust level: {trust_level}")
+            else:
+                logger.warning("No 'Trust Level:' found in trust score response")
+        except Exception as e:
+            logger.error(f"Error extracting trust level: {str(e)}")
             
-        # Format a simplified concise response with separate string parts to avoid backslash issues
-        project_remark = ""
-        scam_remark = ""
+        # Extract reasoning with more robust parsing
+        reasoning = "Analysis based on market data, security audits, and project history."
+        try:
+            if "Reason:" in trust_score:
+                reasoning = trust_score.split("Reason:")[1].strip()
+                logger.info(f"Extracted reasoning: {reasoning[:50]}...")
+            else:
+                logger.warning("No 'Reason:' found in trust score response")
+        except Exception as e:
+            logger.error(f"Error extracting reasoning: {str(e)}")
+              # Format a simplified concise response with separate string parts to avoid backslash issues
+        project_remark = "No project data available"
+        scam_remark = "No scam analysis available"
+        
         try:
             project_lines = sections['project_analysis'].split("\n")
             if project_lines and len(project_lines) > 0:
-                project_remark = project_lines[0].strip()
-        except:
-            project_remark = "No project data available"
+                for line in project_lines:
+                    if line.strip():  # Find first non-empty line
+                        project_remark = line.strip()
+                        break
+            logger.info(f"Project remark: {project_remark}")
+        except Exception as e:
+            logger.error(f"Error extracting project remark: {str(e)}")
             
         try:
             scam_lines = sections['scam_analysis'].split("\n")
             if scam_lines and len(scam_lines) > 0:
-                scam_remark = scam_lines[0].strip()
-        except:
-            scam_remark = "No scam analysis available"
+                for line in scam_lines:
+                    if line.strip():  # Find first non-empty line
+                        scam_remark = line.strip()
+                        break
+            logger.info(f"Scam remark: {scam_remark}")
+        except Exception as e:
+            logger.error(f"Error extracting scam remark: {str(e)}")        # Build response with more robust trust score extraction
+        trust_score_value = "N/A"  # Default if we can't extract a proper score
+        try:
+            if 'Overall Trust Score:' in trust_score:
+                parts = trust_score.split('Overall Trust Score:')
+                if len(parts) > 1:
+                    score_line = parts[1].split("\n")[0].strip()
+                    if score_line:
+                        trust_score_value = score_line
+                        logger.info(f"Extracted trust score value: {trust_score_value}")
+                    else:
+                        logger.warning("Empty trust score value extracted")
+            else:
+                logger.warning("No 'Overall Trust Score:' found in trust score response")
+                # Try to generate a score if LLM didn't provide one in expected format
+                if llm and trust_score:
+                    try:
+                        # Ask LLM to extract or generate a score
+                        extract_prompt = f"Extract or generate a trust score from 0-10 for this analysis: {trust_score}\nJust output the number followed by /10."
+                        score_response = llm.invoke(extract_prompt)
+                        if hasattr(score_response, 'content'):
+                            extracted = score_response.content.strip()
+                        else:
+                            extracted = str(score_response).strip()
+                            
+                        # Look for a pattern like "7/10" in the response
+                        import re
+                        score_match = re.search(r'(\d+(?:\.\d+)?)/10', extracted)
+                        if score_match:
+                            trust_score_value = score_match.group(0)
+                            logger.info(f"Generated trust score from content: {trust_score_value}")
+                    except Exception as e:
+                        logger.error(f"Error generating trust score from content: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error extracting trust score value: {str(e)}")
         
-        # Build response without problematic string operations
-        trust_score_value = "N/A"
-        if 'Overall Trust Score:' in trust_score:
-            parts = trust_score.split('Overall Trust Score:')
-            if len(parts) > 1:
-                score_line = parts[1].split("\n")[0].strip()
-                trust_score_value = score_line
-        
+        # Ensure project and scam remarks are not empty
+        if not project_remark or project_remark.isspace():
+            project_remark = "No significant project data available"
+            
+        if not scam_remark or scam_remark.isspace():
+            scam_remark = "No significant risk factors identified"
+            
+        # Build the final response with proper formatting
         response = (f"{project_name.upper()}\n\n"
                    f"Trust Score: {trust_score_value} ({trust_level})\n"
                    f"Current Price: {current_price}\n"
@@ -183,9 +303,13 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
                    f"- {scam_remark}\n\n"
                    f"Reasoning: {reasoning}")
         
+        logger.info(f"Analysis complete for {project_name}")
+        logger.debug(f"Final response: {response}")
         return response
     except Exception as e:
-        return f"Error performing Decryptify analysis: {str(e)}"
+        error_msg = f"Error performing Decryptify analysis: {str(e)}"
+        logger.error(error_msg)
+        return error_msg
 
 # Create the tool
 decryptify_tool = Tool(

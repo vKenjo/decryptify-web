@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import ChatThread from './ChatThread';
-import ChatInput from './ChatInput';
-import ChatSuggestions from './ChatSuggestions';
-import { MessageRole } from './ChatMessage';
 import { apiService } from '@/services/api';
+import React, { useEffect, useState } from 'react';
+import ChatInput from './ChatInput';
+import { MessageRole } from './ChatMessage';
+import ChatSuggestions from './ChatSuggestions';
+import ChatThread from './ChatThread';
 
 interface Message {
   id: string;
@@ -28,6 +28,7 @@ const Chat: React.FC<ChatProps> = ({ streaming = false }) => {
   const [isWelcomeVisible, setIsWelcomeVisible] = useState(true);
   const [chatId, setChatId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadingChat, setLoadingChat] = useState(false);
   
   // Example suggestions based on the image
   const suggestions: Suggestion[] = [
@@ -123,7 +124,50 @@ const Chat: React.FC<ChatProps> = ({ streaming = false }) => {
   const handleSuggestionClick = (suggestion: Suggestion) => {
     handleSendMessage(suggestion.title);
   };
-  
+    // Function to load a specific chat
+  const loadChat = async (chatIdToLoad: string) => {
+    if (!chatIdToLoad) return;
+    
+    setLoadingChat(true);
+    setChatId(chatIdToLoad);
+    
+    try {
+      // Load chat history from backend
+      const response = await apiService.getChatHistory(chatIdToLoad);
+      
+      const formattedMessages: Message[] = response.messages
+        .filter(msg => msg.role !== 'system') // Don't show system messages
+        .map(msg => ({
+          id: crypto.randomUUID(),
+          content: msg.content,
+          role: msg.role as MessageRole,
+        }));
+        
+      setMessages(formattedMessages);
+      
+      if (formattedMessages.length > 0) {
+        setIsWelcomeVisible(false);
+      }
+      
+      // Update URL and localStorage to reflect current chat
+      localStorage.setItem('currentChatId', chatIdToLoad);
+      const newUrl = `${window.location.pathname}?chatId=${chatIdToLoad}`;
+      window.history.replaceState({ ...window.history.state }, '', newUrl);
+      
+      return true;
+    } catch (err) {
+      console.error('Failed to load chat history:', err);
+      setError('Failed to load chat history. The chat may have been deleted.');
+      
+      // If chat not found, clear the stored ID
+      localStorage.removeItem('currentChatId');
+      setChatId(null);
+      
+      return false;
+    } finally {
+      setLoadingChat(false);
+    }
+  };
   // Load existing chat if there's a chatId in URL or storage
   useEffect(() => {
     // Check if there's a chat ID in local storage or URL params
@@ -134,44 +178,57 @@ const Chat: React.FC<ChatProps> = ({ streaming = false }) => {
     const chatIdToLoad = urlChatId || storedChatId;
     
     if (chatIdToLoad) {
-      setChatId(chatIdToLoad);
-      
-      // Load chat history from backend
-      apiService.getChatHistory(chatIdToLoad)
-        .then(response => {
-          const formattedMessages: Message[] = response.messages
-            .filter(msg => msg.role !== 'system') // Don't show system messages
-            .map(msg => ({
-              id: crypto.randomUUID(),
-              content: msg.content,
-              role: msg.role as MessageRole,
-            }));
-          setMessages(formattedMessages);
-          if (formattedMessages.length > 0) {
-            setIsWelcomeVisible(false);
-          }
-        })
-        .catch(err => {
-          console.error('Failed to load chat history:', err);
-          // If chat not found, clear the stored ID
-          localStorage.removeItem('currentChatId');
-          setChatId(null);
-        });
+      loadChat(chatIdToLoad);
     }
-  }, []);
-  
-  // Save current chat ID to local storage and update URL
-  useEffect(() => {
-    if (chatId) {
-      localStorage.setItem('currentChatId', chatId);
-      // Update URL without causing a page reload
-      const newUrl = `${window.location.pathname}?chatId=${chatId}`;
-      window.history.replaceState({ ...window.history.state }, '', newUrl);
-    }
+    
+    // Listen for chat selection events from sidebar
+    const handleChatSelected = (event: CustomEvent) => {
+      const selectedChatId = event.detail?.chatId;
+      if (selectedChatId && selectedChatId !== chatId) {
+        loadChat(selectedChatId);
+      }
+    };
+    
+    // Listen for "new chat" events
+    const handleNewChat = () => {
+      startNewChat();
+    };
+    
+    // Add event listeners
+    window.addEventListener('chatselected', handleChatSelected as EventListener);
+    window.addEventListener('newchat', handleNewChat);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('chatselected', handleChatSelected as EventListener);
+      window.removeEventListener('newchat', handleNewChat);
+    };
   }, [chatId]);
+    // Handle starting a new chat
+  const startNewChat = () => {
+    // Clear current chat state
+    setMessages([]);
+    setChatId(null);
+    setError(null);
+    setIsWelcomeVisible(true);
+    
+    // Remove stored chat ID and update URL
+    localStorage.removeItem('currentChatId');
+    const newUrl = window.location.pathname;
+    window.history.replaceState({ ...window.history.state }, '', newUrl);
+  };
   
   return (
     <div className="chat-background h-full flex flex-col relative bg-white dark:bg-[var(--chat-bg)]">
+      {loadingChat && (
+        <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg flex flex-col items-center">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p className="text-gray-700 dark:text-gray-300">Loading chat...</p>
+          </div>
+        </div>
+      )}
+      
       {/* Absolutely positioned background gradient and ellipses */}
       <div className="chat-bg-gradient" />
       <div className="chat-bg-ellipse1" />

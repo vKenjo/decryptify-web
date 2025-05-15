@@ -377,7 +377,8 @@ async def process_message(chat_id: str, message: str) -> str:
             memory=memory,
             verbose=True,
             handle_parsing_errors=True,
-            max_iterations=3
+            max_iterations=3,
+            tool_names=[tool.name for tool in tools]  # Add missing tool_names parameter
         )
         
         # Run the agent
