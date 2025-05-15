@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+langchain
+langchain-google-genai
+langchain-community
+pydantic
+python-dotenv
+firebase-admin
+requests
+python-multipart
+httpx

@@ -1,0 +1,235 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --purple-primary: #CF86FF;
+  --blue-primary: #AED2FF;
+  --light-purple: #EDD3FF;
+  --medium-blue: #61A3F5;
+  --dark-purple: #9400FF;
+  --light-blue: #89BCFF;
+  --sidebar-bg: #ffffff;
+  --chat-bg: #ffffff;
+  --navbar-bg: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  --background: #111111;
+  --foreground: #ededed;
+  --user-bubble-bg: rgba(30, 58, 138, 0.3);
+  --user-bubble-border: rgba(30, 58, 138, 0.5);
+  --user-bubble-text: #e0f2fe;
+  --sidebar-bg: #514769;
+  --chat-bg: #222121;
+  --navbar-bg: #111111;
+  color-scheme: dark;
+}
+
+/* Improve transition between light and dark mode */
+html {
+  transition: color 350ms ease, background-color 350ms ease;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  overflow: hidden;
+  background-image: radial-gradient(circle at 50% 50%, 
+                     rgba(237, 211, 255, 0.1) 0%, 
+                     rgba(174, 210, 255, 0.05) 50%, 
+                     rgba(255, 255, 255, 0) 100%);
+  transition: background-color 350ms ease;
+}
+
+/* Dark mode specific background adjustment */
+.dark body {
+  background-image: radial-gradient(circle at 50% 50%, 
+                     rgba(97, 66, 133, 0.05) 0%, 
+                     rgba(49, 59, 114, 0.03) 50%, 
+                     rgba(0, 0, 0, 0) 100%);
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(90deg, var(--purple-primary), var(--medium-blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Button hover effects */
+.gradient-button {
+  background: linear-gradient(90deg, var(--light-blue), var(--purple-primary));
+  transition: all 0.3s ease;
+}
+
+.gradient-button:hover {
+  background: linear-gradient(90deg, var(--medium-blue), var(--dark-purple));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(207, 134, 255, 0.3);
+}
+
+/* Chat bubble gradient for AI responses */
+.bg-gradient-bubble {
+  background: linear-gradient(135deg, var(--medium-blue), var(--dark-purple));
+}
+
+/* Chatbox styling */
+.chatbox {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.dark .chatbox {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.chatbox:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.dark .chatbox:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom colors for user chat bubble */
+:root {
+  --user-bubble-bg: rgba(137, 188, 255, 0.2);
+  --user-bubble-border: rgba(137, 188, 255, 0.4);
+  --user-bubble-text: #172554;
+}
+
+.dark {
+  --user-bubble-bg: rgba(30, 58, 138, 0.3);
+  --user-bubble-border: rgba(30, 58, 138, 0.5);
+  --user-bubble-text: #e0f2fe;
+}
+
+/* Animation for sidebar items */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.animate-fadeOut {
+  animation: fadeOut 0.5s ease forwards;
+}
+
+@keyframes bubble {
+  0% {
+    transform: scale(0.97);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-bubble {
+  animation: bubble 0.6s ease-in-out;
+}
+
+/* Pulse animation for active chat items */
+@keyframes gentle-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(96, 165, 250, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
+  }
+}
+
+.animate-gentle-pulse {
+  animation: gentle-pulse 2s infinite;
+}
+
+/* Hover animation for buttons */
+.button-hover-effect {
+  transition: all 0.3s ease;
+}
+
+.button-hover-effect:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.25);
+}
+
+/* Chat background gradient to match provided screenshot */
+.chat-background {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-bg-gradient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 60% 60% at 50% 90%, #e6d6fa 0%, #f7f3ff 60%, #ffffff 100%);
+  opacity: 0.7;
+}
+
+/* Visually appealing blurred ellipses for chat background */
+.chat-bg-ellipse1 {
+  position: absolute;
+  left: 10vw;
+  bottom: 8vh;
+  width: 560px;
+  height: 280px;
+  border-radius: 280px;
+  background: #89BCFF;
+  filter: blur(150px);
+  opacity: 0.28;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chat-bg-ellipse2 {
+  position: absolute;
+  right: 8vw;
+  bottom: 0;
+  width: 828px;
+  height: 414px;
+  border-radius: 414px;
+  background: #CF86FF;
+  filter: blur(250px);
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 1;
+}

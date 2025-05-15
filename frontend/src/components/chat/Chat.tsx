@@ -1,0 +1,197 @@
+import React, { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import ChatThread from './ChatThread';
+import ChatInput from './ChatInput';
+import ChatSuggestions from './ChatSuggestions';
+import { MessageRole } from './ChatMessage';
+import { apiService } from '@/services/api';
+
+interface Message {
+  id: string;
+  content: string;
+  role: MessageRole;
+}
+
+interface Suggestion {
+  id: string;
+  title: string;
+  text: string;
+}
+
+const Chat: React.FC = () => {  
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [isWelcomeVisible, setIsWelcomeVisible] = useState(true);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Example suggestions based on the image
+  const suggestions: Suggestion[] = [
+    { 
+      id: '1', 
+      title: "What's the trust score for [Crypto Project]?",
+      text: "Find out the trust rating for any crypto project"
+    },
+    { 
+      id: '2', 
+      title: "How is the trust score calculated?",
+      text: "Learn about the methodology behind our trust ratings"
+    },
+    { 
+      id: '3', 
+      title: "Which new crypto projects have strong trust scores?",
+      text: "Discover promising new projects with high trust ratings"
+    }
+  ];
+  
+  const handleTyping = (typing: boolean) => {
+    setIsTyping(typing);
+    
+    // If the user starts typing and the welcome screen is still visible, trigger the fade out
+    if (typing && isWelcomeVisible && messages.length === 0) {
+      setIsWelcomeVisible(false);
+    }
+  };
+  
+  const handleSendMessage = async (content: string) => {
+    // When a message is sent, hide the welcome screen
+    setIsWelcomeVisible(false);
+    
+    const newMessage: Message = {
+      id: uuidv4(),
+      content,
+      role: 'user',
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
+    setIsProcessing(true);
+    setError(null);
+    
+    try {
+      // If this is the first message, create a new chat
+      if (!chatId) {
+        const createResponse = await apiService.createChat(content);
+        setChatId(createResponse.chat_id);
+        
+        // The response from createChat should already include the AI response
+        // so we don't need to send another message
+      } else {
+        // Send message to existing chat
+        const response = await apiService.sendMessage(chatId, content);
+        
+        const assistantMessage: Message = {
+          id: uuidv4(),
+          content: response.message.content,
+          role: 'assistant',
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      
+      // Add an error message to the chat
+      const errorMessage: Message = {
+        id: uuidv4(),
+        content: "I'm sorry, I encountered an error processing your request. Please try again.",
+        role: 'assistant',
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  const handleSuggestionClick = (suggestion: Suggestion) => {
+    handleSendMessage(suggestion.title);
+  };
+  
+  // Load existing chat if there's a chatId in URL or storage
+  useEffect(() => {
+    // Check if there's a chat ID in local storage
+    const storedChatId = localStorage.getItem('currentChatId');
+    if (storedChatId) {
+      setChatId(storedChatId);
+      
+      // Load chat history
+      apiService.getChatHistory(storedChatId)
+        .then(response => {
+          const formattedMessages: Message[] = response.messages.map(msg => ({
+            id: uuidv4(),
+            content: msg.content,
+            role: msg.role as MessageRole,
+          }));
+          setMessages(formattedMessages);
+          if (formattedMessages.length > 0) {
+            setIsWelcomeVisible(false);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load chat history:', err);
+        });
+    }
+  }, []);
+  
+  // Save current chat ID to local storage
+  useEffect(() => {
+    if (chatId) {
+      localStorage.setItem('currentChatId', chatId);
+    }
+  }, [chatId]);
+  
+  return (
+    <div className="chat-background h-full flex flex-col relative bg-white dark:bg-[var(--chat-bg)]">
+      {/* Absolutely positioned background gradient and ellipses */}
+      <div className="chat-bg-gradient" />
+      <div className="chat-bg-ellipse1" />
+      <div className="chat-bg-ellipse2" />
+      <div className="flex-1 overflow-hidden relative z-10 flex flex-col max-h-[75vh]">
+        <ChatThread 
+          messages={messages} 
+          isWelcomeVisible={isWelcomeVisible}
+          isTyping={isTyping}
+        />
+      </div>
+      
+      {/* Make sure the input stays at the bottom and above the background */}
+      <div className="px-4 pb-8 pt-0 relative z-20 bg-transparent flex-shrink-0 mt-auto">
+        {messages.length === 0 && !isTyping && (
+          <div className="absolute left-0 right-0 bottom-[70px] px-4 pointer-events-none">
+            <div className="max-w-3xl mx-auto pointer-events-auto">
+              <ChatSuggestions 
+                suggestions={suggestions}
+                onSuggestionClick={handleSuggestionClick}
+              />
+            </div>
+          </div>
+        )}
+        
+        <ChatInput 
+          onSendMessage={handleSendMessage}
+          isProcessing={isProcessing}
+          onTyping={handleTyping}
+        />
+        
+        {isProcessing && (
+          <div className="absolute bottom-24 left-0 right-0 flex justify-center animate-fadeIn">
+            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-full py-1.5 px-4 text-sm text-blue-600 dark:text-blue-300 shadow-sm flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              DeCryptify is thinking...
+            </div>
+          </div>
+        )}
+        
+        {error && (
+          <div className="absolute bottom-24 left-0 right-0 flex justify-center animate-fadeIn">
+            <div className="bg-red-50 dark:bg-red-900/30 rounded-full py-1.5 px-4 text-sm text-red-600 dark:text-red-300 shadow-sm">
+              {error}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Chat;
