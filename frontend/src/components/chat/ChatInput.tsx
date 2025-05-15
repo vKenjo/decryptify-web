@@ -23,25 +23,24 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isProcessing = fal
       onSendMessage(message);
       setMessage('');
     }
-  };  return (
-    // TODO: change here to change size; pwede din gawin sticky-bottom later 
-    <form onSubmit={handleSubmit} className="relative w-full max-w-3xl mx-auto mb-22">   
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="relative w-full max-w-3xl mx-auto mb-0 bg-transparent">
       <input
         type="text"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder={isProcessing ? "Processing response..." : "Ask me about crypto projects"}        className={`w-full py-3 px-4 pr-14 rounded-full border border-gray-200/70 dark:border-gray-700/50 ${
-          isProcessing ? 'bg-gray-50/95 dark:bg-gray-800/80' : 'bg-white/95 dark:bg-gray-800/70'
-        } focus:outline-none focus:ring-2 focus:ring-primary-purple dark:focus:ring-primary-lightPurple shadow-[0_2px_6px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_6px_rgba(0,0,0,0.2)] backdrop-blur-sm transition-all duration-300 text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-500 dark:placeholder:text-gray-400`}
+        placeholder={isProcessing ? "Processing response..." : "Ask me about crypto projects"}
+        className={`w-full py-4 px-6 pr-16 rounded-full border-0 shadow-xl bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary-purple transition-all duration-300 text-base text-gray-700 placeholder:text-gray-400 backdrop-blur-md`}
         disabled={isProcessing}
-      />      
+        style={{ boxShadow: '0 8px 32px 0 rgba(80, 63, 205, 0.10)', background: 'rgba(255,255,255,0.90)' }}
+        autoComplete="off"
+      />
       <button
         type="submit"
-        disabled={isProcessing}        className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 ${
-          isProcessing 
-            ? 'bg-gradient-to-r from-blue-300 to-violet-400 dark:from-blue-500 dark:to-violet-500' 
-            : 'bg-gradient-to-r from-primary-purple to-primary-mediumBlue hover:scale-105 dark:from-[#9e6bd2] dark:to-[#6490d9]'
-        } rounded-full flex items-center justify-center text-white transition-all duration-300 shadow-md dark:shadow-[0_0_10px_rgba(156,112,223,0.3)]`}
+        disabled={isProcessing}
+        className={`absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-gradient-to-r from-[#8ecafe] to-[#b18fff] rounded-full flex items-center justify-center text-white transition-all duration-300 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-200 ${isProcessing ? 'opacity-60 cursor-not-allowed' : 'hover:scale-105'}`}
       >
         {isProcessing ? (
           <div className="animate-spin">
