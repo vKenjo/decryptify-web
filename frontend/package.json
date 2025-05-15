@@ -11,6 +11,8 @@
   "dependencies": {
     "@coinbase/onchainkit": "^0.38.13",
     "@heroicons/react": "^2.2.0",
+    "@langchain/community": "^0.3.42",
+    "@langchain/core": "^0.3.55",
     "@tanstack/react-query": "^5.76.1",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.21",
