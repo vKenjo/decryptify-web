@@ -4,10 +4,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const path = params.path.join('/');
-  const url = `${API_BASE_URL}/api/${path}`;
+  const { path } = await params;
+  const url = `${API_BASE_URL}/api/${path.join('/')}`;
   
   const response = await fetch(url, {
     headers: request.headers,
@@ -18,10 +18,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const path = params.path.join('/');
-  const url = `${API_BASE_URL}/api/${path}`;
+  const { path } = await params;
+  const url = `${API_BASE_URL}/api/${path.join('/')}`;
   
   const body = await request.text();
   
@@ -39,10 +39,10 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const path = params.path.join('/');
-  const url = `${API_BASE_URL}/api/${path}`;
+  const { path } = await params;
+  const url = `${API_BASE_URL}/api/${path.join('/')}`;
   
   const body = await request.text();
   
@@ -60,10 +60,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const path = params.path.join('/');
-  const url = `${API_BASE_URL}/api/${path}`;
+  const { path } = await params;
+  const url = `${API_BASE_URL}/api/${path.join('/')}`;
   
   const response = await fetch(url, {
     method: 'DELETE',
