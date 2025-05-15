@@ -77,8 +77,7 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
         except Exception as e:
             print(f"Error finding related projects: {str(e)}")
             sections["related_projects"] = []
-        
-        # 8. Let the LLM calculate the trust score
+          # 8. Let the LLM calculate the trust score
         trust_score = "Not available"
         if llm:
             try:
@@ -103,77 +102,86 @@ def decryptify_analysis(query: str, llm: Optional[LLM] = None) -> str:
                 Return only a trust score section in this format:
                 Overall Trust Score: [SCORE]/10
                 Trust Level: [HIGH/MEDIUM/LOW]
-                [Brief explanation of the score in 2-3 sentences]
-                """
+                Reason: [1-2 sentence explanation]                """
                 
-                trust_score = llm.predict(trust_prompt)
+                response = llm.invoke(trust_prompt)
+                # Extract content based on the return type (could be message object or string)
+                if hasattr(response, 'content'):
+                    trust_score = response.content
+                else:
+                    trust_score = str(response)
             except Exception as e:
                 trust_score = f"Trust score calculation failed: {str(e)}"
         
-        # Format the comprehensive response with simplified structure
-        response = f"""
-            # DECRYPTIFY ANALYSIS: {project_name.upper()}
+        # Extract current price from market data
+        current_price = "Not available"
+        market_cap = "Not available"
+        try:
+            import re
+            price_match = re.search(r'Price: \$([\d,\.]+)', sections['market_data'])
+            if price_match:
+                current_price = f"${price_match.group(1)}"
+            
+            mcap_match = re.search(r'Market Cap: \$([\d,\.]+\w?)', sections['market_data'])
+            if mcap_match:
+                market_cap = f"${mcap_match.group(1)}"
+        except Exception:
+            pass
 
-            {trust_score}
-
-            ---
-
-            ## MARKET DATA & METRICS
-            {sections['market_data']}
-
-            ---
-
-            ## SCAM RISK ASSESSMENT
-            {sections['scam_analysis']}
-
-            ---
-
-            ## SECURITY AUDIT STATUS
-            {sections['security_audit']}
-
-            ---
-
-            ## EXCHANGE ANALYSIS
-            {sections['exchange_analysis']}
-
-            ---
-
-            ## FOUNDER & TEAM ANALYSIS
-            {sections['founder_analysis']}
-
-            ---
-
-            ## PROJECT INFORMATION
-            {sections['project_analysis']}
-
-            ---
-
-            ## RELATED PROJECTS
-            """
+        # Extract founder info - just the basics
+        founder_info = "No founder information available"
+        try:
+            # Try to extract just the key founder information
+            founder_section = sections['founder_analysis'].split('\n')
+            for i, line in enumerate(founder_section):
+                if "Founder" in line or "Team" in line or "CEO" in line:
+                    founder_info = '\n'.join(founder_section[i:i+3])
+                    break
+        except Exception:
+            pass
+          # Extract trust level
+        trust_level = "UNKNOWN"
+        if "Trust Level:" in trust_score:
+            trust_level = trust_score.split("Trust Level:")[1].split("\n")[0].strip()
+          # Extract reasoning
+        reasoning = "Analysis based on market data, security audits, and project history."
+        if "Reason:" in trust_score:
+            reasoning = trust_score.split("Reason:")[1].strip()
+            
+        # Format a simplified concise response with separate string parts to avoid backslash issues
+        project_remark = ""
+        scam_remark = ""
+        try:
+            project_lines = sections['project_analysis'].split("\n")
+            if project_lines and len(project_lines) > 0:
+                project_remark = project_lines[0].strip()
+        except:
+            project_remark = "No project data available"
+            
+        try:
+            scam_lines = sections['scam_analysis'].split("\n")
+            if scam_lines and len(scam_lines) > 0:
+                scam_remark = scam_lines[0].strip()
+        except:
+            scam_remark = "No scam analysis available"
         
-        if sections["related_projects"]:
-            for related in sections["related_projects"]:
-                response += f"\n• {related}"
-        else:
-            response += "\nNo directly related projects identified."
+        # Build response without problematic string operations
+        trust_score_value = "N/A"
+        if 'Overall Trust Score:' in trust_score:
+            parts = trust_score.split('Overall Trust Score:')
+            if len(parts) > 1:
+                score_line = parts[1].split("\n")[0].strip()
+                trust_score_value = score_line
         
-        response += """
-
-            ---
-
-            ## KEY TAKEAWAYS
-
-            1. Consider all factors before investing
-            2. Always do your own research
-            3. Evaluate based on your investment timeline
-            4. Match investment to your risk profile
-
-            ---
-
-            DISCLAIMER: This analysis is for informational purposes only and should not be considered financial advice. Cryptocurrency investments carry significant risk.
-
-            *Analysis by Decryptify AI*
-        """
+        response = (f"{project_name.upper()}\n\n"
+                   f"Trust Score: {trust_score_value} ({trust_level})\n"
+                   f"Current Price: {current_price}\n"
+                   f"Market Cap: {market_cap}\n\n"
+                   f"Founder: {founder_info}\n\n"
+                   f"Key Remarks:\n"
+                   f"- {project_remark}\n"
+                   f"- {scam_remark}\n\n"
+                   f"Reasoning: {reasoning}")
         
         return response
     except Exception as e:

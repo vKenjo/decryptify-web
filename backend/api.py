@@ -16,19 +16,35 @@ from langchain.tools import Tool
 from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from project root
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
 # Initialize Firebase
 try:
     if not firebase_admin._apps:
-        cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "firebase-credentials.json")
+        # Try different paths for credentials
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        root_dir = os.path.dirname(current_dir)
+        default_cred_path = os.path.join(current_dir, "firebase-credentials.json")
+        root_cred_path = os.path.join(root_dir, "firebase-credentials.json")
+        
+        # Check environment variable, then try root directory, then backend directory
+        cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", None)
+        if cred_path and not os.path.isabs(cred_path):
+            cred_path = os.path.join(root_dir, cred_path)
+        
+        if not cred_path or not os.path.exists(cred_path):
+            if os.path.exists(root_cred_path):
+                cred_path = root_cred_path
+            elif os.path.exists(default_cred_path):
+                cred_path = default_cred_path
+        
         if os.path.exists(cred_path):
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
             db = firestore.client()
         else:
-            print("Warning: Firebase credentials not found. Chat history will not be saved.")
+            print(f"Warning: Firebase credentials not found at {cred_path}. Chat history will not be saved.")
             db = None
 except Exception as e:
     print(f"Firebase initialization error: {e}")
@@ -150,7 +166,7 @@ def add_message_to_chat(chat_id: str, message: ChatMessage) -> None:
     if db:
         chat_ref = db.collection("chats").document(chat_id)
         chat_ref.update({
-            "messages": firestore.ArrayUnion([message.dict()]),
+            "messages": firestore.ArrayUnion([message.model_dump()]),
             "updated_at": firestore.SERVER_TIMESTAMP
         })
 
@@ -341,7 +357,7 @@ async def process_message(chat_id: str, message: str) -> str:
             # If it's a simple project name query, use the decryptify tool directly
             if len(project_name.split()) <= 3:  # Simple queries like "Bitcoin" or "Ethereum Classic"
                 # Pass the LLM to the decryptify tool so it can calculate the trust score & find related projects
-                from backend.agents.decryptify import decryptify_analysis
+                from agents.decryptify import decryptify_analysis
                 response = decryptify_analysis(project_name, llm=llm)
                 memory.chat_memory.add_user_message(message)
                 memory.chat_memory.add_ai_message(response)

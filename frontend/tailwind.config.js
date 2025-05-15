@@ -6,6 +6,10 @@ module.exports = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   darkMode: "class",
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
+  safelist: ["dark:from-[#1e3a8a]", "dark:to-[#581c87]"],
   theme: {
     extend: {
       colors: {
