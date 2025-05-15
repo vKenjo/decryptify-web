@@ -219,28 +219,33 @@ const Chat: React.FC<ChatProps> = ({ streaming = false }) => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col bg-transparent ">
+    <div className="chat-background h-full flex flex-col relative bg-white dark:bg-[var(--chat-bg)]">
       {loadingChat && (
-        <div className="absolute inset-0 bg-transparent flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="p-4 bg-white bg-transparent rounded-lg shadow-lg flex flex-col items-center">
+        <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg flex flex-col items-center">
             <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
             <p className="text-gray-700 dark:text-gray-300">Loading chat...</p>
           </div>
         </div>
       )}
-      {/* Main chat area */}
-      <div className="flex-1 overflow-hidden relative z-10 flex flex-col max-h-[80vh] bg-transparent">
+      
+      {/* Absolutely positioned background gradient and ellipses */}
+      <div className="chat-bg-gradient" />
+      <div className="chat-bg-ellipse1" />
+      <div className="chat-bg-ellipse2" />
+      <div className="flex-1 overflow-hidden relative z-10 flex flex-col max-h-[75vh]">
         <ChatThread 
           messages={messages} 
           isWelcomeVisible={isWelcomeVisible}
           isTyping={isTyping}
         />
       </div>
-      {/* Suggestions and input area with ellipses background */}
-      <div className="relative z-20 w-full flex flex-col items-center bg-transparent">
+      
+      {/* Make sure the input stays at the bottom and above the background */}
+      <div className="px-4 pb-8 pt-0 relative z-20 bg-transparent flex-shrink-0 mt-auto">
         {messages.length === 0 && !isTyping && (
-          <div className="w-full px-4 mb-2">
-            <div className="max-w-3xl mx-auto">
+          <div className="absolute left-0 right-0 bottom-[70px] px-4 pointer-events-none">
+            <div className="max-w-3xl mx-auto pointer-events-auto">
               <ChatSuggestions 
                 suggestions={suggestions}
                 onSuggestionClick={handleSuggestionClick}
@@ -248,26 +253,25 @@ const Chat: React.FC<ChatProps> = ({ streaming = false }) => {
             </div>
           </div>
         )}
-        <div className="w-full px-4 flex-shrink-0 mt-auto max-w-3xl mx-auto">
-          <div className="backdrop-blur-md bg-white/60 dark:bg-gray-900/40 rounded-full shadow-lg flex items-center transition-all duration-300">
-            <ChatInput 
-              onSendMessage={handleSendMessage}
-              isProcessing={isProcessing}
-              onTyping={handleTyping}
-            />
-          </div>
-        </div>
+        
+        <ChatInput 
+          onSendMessage={handleSendMessage}
+          isProcessing={isProcessing}
+          onTyping={handleTyping}
+        />
+        
         {isProcessing && (
-          <div className="absolute bottom-24 pb-12 left-0 right-0 flex justify-center animate-fadeIn z-20">
-            <div className="bg-blue-50/80 backdrop-blur-md rounded-full py-1.5 px-4 text-sm text-blue-600 shadow-sm flex items-center gap-2">
+          <div className="absolute bottom-24 left-0 right-0 flex justify-center animate-fadeIn">
+            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-full py-1.5 px-4 text-sm text-blue-600 dark:text-blue-300 shadow-sm flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
               DeCryptify is thinking...
             </div>
           </div>
         )}
+        
         {error && (
           <div className="absolute bottom-24 left-0 right-0 flex justify-center animate-fadeIn">
-            <div className="bg-red-50/80 dark:bg-red-900/40 backdrop-blur-md rounded-full py-1.5 px-4 text-sm text-red-600 dark:text-red-300 shadow-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 rounded-full py-1.5 px-4 text-sm text-red-600 dark:text-red-300 shadow-sm">
               {error}
             </div>
           </div>
