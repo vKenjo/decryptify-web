@@ -58,9 +58,15 @@ except Exception as e:
     db = None
 
 # Replace the existing LLM initialization
+openai_key = os.getenv("OPENAI_API_KEY")
+if not openai_key:
+    raise ValueError(
+        "OPENAI_API_KEY environment variable is not set. Please set it in your .env file or Docker environment."
+    )
+
 llm = ChatOpenAI(
     model="gpt-4o-mini",  # You can use "gpt-3.5-turbo" for a more affordable option
-    openai_api_key=os.getenv("OPENAI_API_KEY"),
+    openai_api_key=openai_key,
     temperature=0.7,
 )
 
@@ -430,5 +436,7 @@ app = app
 
 if __name__ == "__main__":
     import uvicorn
+    import os
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)
