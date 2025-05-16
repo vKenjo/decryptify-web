@@ -12,6 +12,8 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_TELEMETRY_DISABLED=1
+      - TAILWINDCSS_DEBUG=false
   backend:
     build:
       context: ./backend

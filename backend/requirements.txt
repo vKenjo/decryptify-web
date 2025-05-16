@@ -4,6 +4,7 @@ langchain
 langchain-google-genai
 langchain-community
 langchain-core
+langchain-openai
 pydantic
 python-dotenv
 firebase-admin
