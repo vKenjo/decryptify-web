@@ -2,7 +2,7 @@
 
 /* Trust Score Card Styling */
 .trust-score-card {
-  @apply bg-gradient-to-r from-[#ebf5ff] to-[#faf5ff] dark:from-[#1e3a8a] dark:to-[#581c87] p-6 rounded-lg shadow-md mb-6;
+  @apply bg-gradient-to-r from-[#ebf5ff] to-[#faf5ff] dark:from-[#1e3a8a] dark:to-[#581c87] p-4 rounded-lg shadow-md mb-6;
 }
 
 .trust-score-header {

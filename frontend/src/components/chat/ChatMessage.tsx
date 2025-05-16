@@ -12,7 +12,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content }) => {
   const isUser = role === 'user';
 
   return (
-    <div className={`flex gap-3 p-6 w-full ${
+    <div className={`flex gap-3 p-4 w-full ${
       isUser 
         ? 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800' 
         : 'bg-white dark:bg-gray-800'

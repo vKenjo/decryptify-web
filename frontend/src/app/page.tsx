@@ -42,7 +42,11 @@ export default function LandingPage() {
 			</div>
 
 			<main className="flex-1 flex items-center justify-center px-4 z-10 relative">
-				<div className="w-full max-w-md p-6 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-2xl shadow-xl border border-white/30 dark:border-gray-700/40 transform hover:scale-[1.01] transition-transform duration-300">
+				<div className="w-full max-w-md p-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-2xl shadow-xl border border-white/30 dark:border-gray-700/40 transform hover:scale-[1.01] transition-transform duration-300">
+					{/* Add Try DeCryptify button at the top of the main card */}
+					<div className="flex justify-center mb-4">
+
+					</div>
 					{/* Logo and Title */}
 					<div className="flex flex-col items-center mb-6">
 						<div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-violet-600 rounded-2xl flex items-center justify-center text-white shadow-lg mb-3 animate-pulse-slow relative">
@@ -137,6 +141,12 @@ export default function LandingPage() {
 								</div>
 							</WalletDropdown>
 						</Wallet>
+												<button
+							onClick={() => router.push('/chat')}
+							className="py-2 px-6 rounded-xl font-bold text-white bg-gradient-to-r from-blue-500 to-violet-600 hover:from-blue-600 hover:to-violet-700 shadow-lg transition-all duration-300 transform hover:scale-105 text-base animate-fade-in"
+						>
+							Try DeCryptify
+						</button>
 					</div>
 
 					{!isConnected && (
