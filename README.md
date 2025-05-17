@@ -6,7 +6,7 @@ A comprehensive crypto trust assessment system with Next.js frontend and Python 
 
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Backend**: Python FastAPI with LangChain agents
-- **AI**: Google AI Studio (Gemini Pro) via LangChain
+- **AI**: Google AI Studio (Gemini Pro) via LangChain and GPT 4o-mini (Claude intergration soon)
 - **Database**: Firebase Firestore
 - **Deployment**: Vercel (supports both frontend and Python backend)
 
